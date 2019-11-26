@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.edu.bupt.camera.WechatPostApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.235 s - in com.edu.bupt.camera.WechatPostApplicationTests

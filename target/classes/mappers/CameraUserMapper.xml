@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.edu.bupt.camera.dao.CameraUserMapper" >
+  <resultMap id="BaseResultMap" type="com.edu.bupt.camera.model.CameraUser" >
+    <constructor >
+      <idArg column="customer_id" jdbcType="INTEGER" javaType="java.lang.Integer" />
+      <arg column="appKey" jdbcType="VARCHAR" javaType="java.lang.String" />
+      <arg column="appSecret" jdbcType="VARCHAR" javaType="java.lang.String" />
+      <arg column="accessToken" jdbcType="VARCHAR" javaType="java.lang.String" />
+      <arg column="timestamp" jdbcType="TIMESTAMP" javaType="java.util.Date" />
+    </constructor>
+  </resultMap>
+  <sql id="Base_Column_List" >
+    customer_id, appKey, appSecret, accessToken, timestamp
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from camera_user
+    where customer_id = #{customerId,jdbcType=INTEGER}
+  </select>
+  <select id ="selectByAppKey" resultMap="BaseResultMap" parameterType="java.lang.String">
+    select
+    <include refid="Base_Column_List"/>
+    from camera_user
+    where appKey = #{appKey,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from camera_user
+    where customer_id = #{customerId,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.edu.bupt.camera.model.CameraUser" >
+    insert into camera_user (customer_id, appKey, appSecret, 
+      accessToken, timestamp)
+    values (#{customerId,jdbcType=INTEGER}, #{appkey,jdbcType=VARCHAR}, #{appsecret,jdbcType=VARCHAR}, 
+      #{accesstoken,jdbcType=VARCHAR}, #{timestamp,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.edu.bupt.camera.model.CameraUser" >
+    insert into camera_user
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="customerId != null" >
+        customer_id,
+      </if>
+      <if test="appkey != null" >
+        appKey,
+      </if>
+      <if test="appsecret != null" >
+        appSecret,
+      </if>
+      <if test="accesstoken != null" >
+        accessToken,
+      </if>
+      <if test="timestamp != null" >
+        timestamp,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="customerId != null" >
+        #{customerId,jdbcType=INTEGER},
+      </if>
+      <if test="appkey != null" >
+        #{appkey,jdbcType=VARCHAR},
+      </if>
+      <if test="appsecret != null" >
+        #{appsecret,jdbcType=VARCHAR},
+      </if>
+      <if test="accesstoken != null" >
+        #{accesstoken,jdbcType=VARCHAR},
+      </if>
+      <if test="timestamp != null" >
+        #{timestamp,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.edu.bupt.camera.model.CameraUser" >
+    update camera_user
+    <set >
+      <if test="appkey != null" >
+        appKey = #{appkey,jdbcType=VARCHAR},
+      </if>
+      <if test="appsecret != null" >
+        appSecret = #{appsecret,jdbcType=VARCHAR},
+      </if>
+      <if test="accesstoken != null" >
+        accessToken = #{accesstoken,jdbcType=VARCHAR},
+      </if>
+      <if test="timestamp != null" >
+        timestamp = #{timestamp,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where customer_id = #{customerId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.edu.bupt.camera.model.CameraUser" >
+    update camera_user
+    set appKey = #{appkey,jdbcType=VARCHAR},
+      appSecret = #{appsecret,jdbcType=VARCHAR},
+      accessToken = #{accesstoken,jdbcType=VARCHAR},
+      timestamp = #{timestamp,jdbcType=TIMESTAMP}
+    where customer_id = #{customerId,jdbcType=INTEGER}
+  </update>
+</mapper>
