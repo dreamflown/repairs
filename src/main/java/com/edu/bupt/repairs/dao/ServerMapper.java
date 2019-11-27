@@ -1,5 +1,6 @@
 package com.edu.bupt.repairs.dao;
 
+import com.edu.bupt.repairs.model.DeviceOrder;
 import com.edu.bupt.repairs.model.Task;
 import com.edu.bupt.repairs.model.TaskLog;
 
@@ -25,5 +26,11 @@ public interface ServerMapper {
     int update3(Task task);/*更新maintainer_id*/
 
     int update3(TaskLog taskLog);/*更新maintainer_id*/
+
+    /*4.审批驳回账单*/
+
+    int delete4BYPrimaryId(DeviceOrder deviceOrder);/*根据关键值删除表*/
+
+
 }
 

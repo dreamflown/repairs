@@ -1,8 +1,11 @@
 package com.edu.bupt.repairs.dao;
 
+import com.edu.bupt.repairs.model.DeviceOrder;
 import com.edu.bupt.repairs.model.Task;
 import com.edu.bupt.repairs.model.TaskItem;
 import com.edu.bupt.repairs.model.TaskLog;
+
+import java.math.BigInteger;
 
 public interface WorkerMapper {
     /*每个状态都要：*/
@@ -21,6 +24,11 @@ public interface WorkerMapper {
 
     /*3.确认服务完成*/
     int insert3(TaskItem taskItem);/*插入suggestion,result*/
+
+    /*4.提交备件申请*/
+
+    BigInteger selectByTaskItemId(Task task);/*选出maintainer_id*/
+    int insert4(DeviceOrder deviceOrder);/*插入task_id,maintainer_id,device_id*/
 
 
 }

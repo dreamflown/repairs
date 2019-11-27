@@ -9,12 +9,17 @@ public class Order {
     private Integer type;
     private  Boolean serverTakeOrderResult;
     private Boolean workerTakeOrderResult;
+    private Boolean serverApprovalPayResult;
+
 
 
     public Order(String userid, String address, Integer type) {
         this.id = userid;
         this.address = address;
         this.type = type;
+    }
+    public void setServerApprovalPayResult(Boolean serverApprovalPayResult){
+        this.serverApprovalPayResult=serverApprovalPayResult;
     }
     public String getId() {
         return id;

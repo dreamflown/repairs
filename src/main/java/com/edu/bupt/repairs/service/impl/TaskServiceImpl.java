@@ -4,10 +4,7 @@ import com.edu.bupt.repairs.commom.OrderStatus;
 import com.edu.bupt.repairs.dao.OrderMapper;
 import com.edu.bupt.repairs.dao.ServerMapper;
 import com.edu.bupt.repairs.dao.WorkerMapper;
-import com.edu.bupt.repairs.model.Order;
-import com.edu.bupt.repairs.model.Review;
-import com.edu.bupt.repairs.model.Task;
-import com.edu.bupt.repairs.model.TaskItem;
+import com.edu.bupt.repairs.model.*;
 import com.edu.bupt.repairs.model.message.AuditResultMsg;
 import com.edu.bupt.repairs.model.message.ToLeaderMsg;
 import com.edu.bupt.repairs.service.OrderService;
@@ -274,8 +271,6 @@ public class TaskServiceImpl implements TaskService {
         OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
         OrderService.logger(op);
 
-
-
         return "接单成功";
 
     }
@@ -374,6 +369,32 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void maintenanceWorkerApplyForDevices(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取task_id
+        BigInteger task_id = json.get("task_id").getAsBigInteger();
+        User user = userService.getUserInfo(task_id);
+
+
+        // 存入数据库
+        Task task=new Task();
+        DeviceOrder deviceOrder=new DeviceOrder();
+        BigInteger maintainer_id=workerMapper.selectByTaskItemId(task);
+        int result=workerMapper.insert4(deviceOrder);//待完善
+        if (result<1){
+            throw Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+
+        // 工单状态变为等待备件方案审核
+        order.setStatus(status.LDShenHeZhangDan);
+
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
 
     }
 
@@ -408,26 +429,162 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void serviceProviderApproveBillPass(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取task_id
+        BigInteger task_id = json.get("task_id").getAsBigInteger();
+
+        Order order=new Order();
+
+        order.setServerTakeOrderResult(true);
+
+        // 工单状态变为待负责人审批账单
+        order.setStatus(status.LDShenHeZhangDan);
+
+        // 给负责人发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        BigInteger SPid = order.getSPid(); // 服务商id
+        String auditComments = json.get("suditComment").getAsString(); // 审核意见
+        new ToLeaderMsg<Order>().send( leaderId,SPid, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+        return "您已通过审批";
 
     }
 
     @Override
     public void serviceProviderApproveBillFail(String data) {
 
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取device_id
+        BigInteger deviceorder_id = json.get("deviceorder_id").getAsBigInteger();
+
+        Order order=new Order();
+
+        order.setServerApprovalPayResult(false);
+
+        DeviceOrder deviceOrder;
+
+        //数据库删除数据
+        int result=serverMapper.delete4BYPrimaryId(deviceOrder);
+        if (result<1){
+
+            throw Exception(ErrorCodeEnum.MDC10021019);
+        }
+        // 工单状态变为维修中
+        order.setStatus(status.WeiXiu);
+
+        // 给负责人发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        BigInteger uid = order.getUid();  // 报修用户id
+        new ToLeaderMsg<Order>().send(uid, leaderId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
+
+        return "您已驳回工单";
+
     }
 
     @Override
     public void leaderApproveBillPass(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取task_id
+        BigInteger task_id = json.get("task_id").getAsBigInteger();
+
+        Order order=new Order();
+
+
+        // 工单状态变为待服务确认
+        order.setStatus(status.QueRenFuWu);
+
+        // 给报修用户发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        String auditComments = json.get("suditComment").getAsString(); // 审核意见
+        BigInteger uid = order.getUid();  // 报修用户id
+
+        new AuditResultMsg().send(leaderId, uid, order, auditComments);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+        return "您已通过账单审批";
+
 
     }
 
     @Override
     public void leaderApproveBillFail(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取device_id
+        BigInteger deviceorder_id = json.get("deviceorder_id").getAsBigInteger();
+
+        Order order=new Order();
+
+        order.setServerApprovalPayResult(false);
+
+        DeviceOrder deviceOrder;
+
+        //数据库删除数据
+        int result=serverMapper.delete4BYPrimaryId(deviceOrder);
+        if (result<1){
+
+            throw Exception(ErrorCodeEnum.MDC10021019);
+        }
+        // 工单状态变为维修中
+        order.setStatus(status.WeiXiu);
+
+        // 给服务商发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        BigInteger SPId = order.getSPId(); // 服务商id
+        new ToLeaderMsg<Order>().send(SPid, leaderId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
+
+        return "您已驳回账单";
 
     }
 
     @Override
     public void leaderEnsureAndPay(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取甲方id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        // 工单状态变为待评价
+        order.setStatus(status.PingJia);
+
+        // 给用户发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        BigInteger uid = order.getUid();  // 报修用户id
+        new ToLeaderMsg<Order>().send(uid, leaderId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
+
+        return "您已确认支付";
 
     }
 
