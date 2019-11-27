@@ -1,14 +1,19 @@
 package com.edu.bupt.repairs.service.impl;
 
 import com.edu.bupt.repairs.commom.OrderStatus;
+import com.edu.bupt.repairs.dao.OrderMapper;
+import com.edu.bupt.repairs.dao.ServerMapper;
+import com.edu.bupt.repairs.dao.WorkerMapper;
 import com.edu.bupt.repairs.model.Order;
+import com.edu.bupt.repairs.model.Review;
+import com.edu.bupt.repairs.model.Task;
+import com.edu.bupt.repairs.model.TaskItem;
 import com.edu.bupt.repairs.model.message.AuditResultMsg;
 import com.edu.bupt.repairs.model.message.ToLeaderMsg;
 import com.edu.bupt.repairs.service.OrderService;
 import com.edu.bupt.repairs.service.TaskService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sun.istack.internal.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +28,15 @@ public class TaskServiceImpl implements TaskService {
 
     @Autowired
     OrderStatus status;
+
+    @Autowired
+    OrderMapper orderMapper;
+
+    @Autowired
+    WorkerMapper workerMapper;
+
+    @Autowired
+    ServerMapper serverMapper;
 
     @Override
     public void submitTask(String data) {
@@ -167,27 +181,189 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void serviceProviderReceiveTask(String data) {
+    public String  serviceProviderReceiveTask(String data) {
+
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取维修工id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        Boolean serverTakeOrderResult=true;
+        Order order=new Order();
+        order.setServerTakeOrderResult(serverTakeOrderResult);
+
+        Task task=new Task();
+        task.setMaintainerId(uid);
+
+        //存入数据库
+        int result=serverMapper.insert1(task);
+        if (result<1){
+            throw new Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+        // 工单状态变为待执行
+        order.setStatus(status.ZhiXing);
+
+        // 给用户发送消息
+        BigInteger uid = order.getUid();  // 报修用户id
+        BigInteger SPId = order.getSPId(); // 服务商id
+        new ToLeaderMsg<Order>().send(uid, SPId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+        return"您已接单成功";
 
     }
 
     @Override
     public void serviceProviderRejectTask(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取服务商id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        Task task=new Task();
+
+        task.setServerId(null);
+
+
+        //从数据库删除服务商id
+        int result=serverMapper.delete2(task);
+        if(result<1){
+            throw new Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+        return "您已拒绝接单";
 
     }
 
     @Override
-    public void maintenanceWorkerReceiveTask(String data) {
+    public String maintenanceWorkerReceiveTask(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取维修工id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        Boolean workerTakeOrderResult=true;
+        Order order=new Order();
+        order.setWorkerTakeOrderResult(workerTakeOrderResult);
+
+        // 工单状态变为待维修
+        order.setStatus(status.WeiXiu);
+
+        // 给用户发送消息
+        BigInteger uid = order.getUid();  // 报修用户id
+        BigInteger SPId = order.getSPId(); // 服务商id
+        new ToLeaderMsg<Order>().send(uid, SPId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
+
+        return "接单成功";
 
     }
 
     @Override
-    public void maintenanceWorkerRejectTask(String data) {
+    public String maintenanceWorkerRejectTask(String data) {
+
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取维修工id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        Boolean workerTakeOrderResult=false;
+        Order order=new Order();
+        order.setWorkerTakeOrderResult(workerTakeOrderResult);
+
+        Task task=new Task();
+
+        task.setMaintainerId(null);
+
+
+        //从数据库删除维修工id
+        int result=workerMapper.deleteMaintainerId(task);
+        if(result<1){
+            throw new Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+        // 工单状态变为待执行
+        order.setStatus(status.ZhiXing);
+
+        // 给服务提供商发送消息
+        BigInteger uid = order.getUid();  // 报修用户id
+        BigInteger SPId = order.getSPId(); // 服务商id
+        new ToLeaderMsg<Order>().send(uid, SPId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+        return "您已拒绝接单";
 
     }
 
     @Override
-    public void maintenanceWorkerEnsureService(String data) {
+    public String maintenanceWorkerEnsureService(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取维修工id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+
+        // 获取内容
+        String suggestion = json.get("suggestion").getAsString();  // 维修工建议
+        String result = json.get("result").getAsString(); // 维修结果
+
+        TaskItem taskItem=new TaskItem();
+        taskItem.setSuggestion(suggestion);
+        taskItem.setResult(result);
+
+        //存入数据库
+        int result=workerMapper.insert3(taskItem);
+        if (result<1){
+            throw new Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+        // 工单状态变为待验收
+        order.setStatus(status.YanShou);
+
+        // 给用户发送消息
+        BigInteger SPId = order.getSPid(); // 服务商id
+        BigInteger uid = order.getUid();  // 报修用户id
+
+        new ToLeaderMsg<Order>().send(uid, SPId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+        return "你已确认服务完成";
+
 
     }
 
@@ -202,8 +378,32 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void ensureService(String data) {
+    public String ensureService(String data) {
 
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
+
+        // 获取用户id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+        // 工单状态变为待验收
+        order.setStatus(status.YanShou);
+
+        // 给负责人发送消息
+        BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
+        BigInteger uid = order.getUid();  // 报修用户id
+        new ToLeaderMsg<Order>().send(uid, leaderId, order);
+
+        // 记录此次操作，工单状态追踪
+        OrderOp op = new OrderOp(order, "approve", "pass", auditComments);
+        OrderService.logger(op);
+
+
+
+        return "您已确认服务完成";
     }
 
     @Override
@@ -237,7 +437,34 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void evaluate(String data) {
+    public String evaluate(String data) {
+        JsonObject json = new JsonParser().parse(data).getAsJsonObject();
 
+        // 获取用户id
+        BigInteger uid = json.get("uid").getAsBigInteger();
+        User user = userService.getUserInfo(uid);
+        if (user = null) {
+            return;
+        }
+
+
+        // 获取评价
+        int score = json.get("score").getAsInt();  // 服务评级
+        String contents = json.get("contents").getAsString(); // 服务评论
+
+
+        Review review=new Review();
+        review.setUserId(uid);
+        review.setContents(contents);
+        review.setScore(score);
+
+        //评价数据存入数据库
+
+        int result=orderMapper.insert1(review);
+        if (result<1){
+            throw new Exception(ErrorCodeEnum.MDC10021019);
+        }
+
+        return "提交评级成功";
     }
 }
