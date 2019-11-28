@@ -1,5 +1,7 @@
 package com.edu.bupt.repairs.service;
 
+import java.math.BigInteger;
+
 public interface TaskService {
     /**
      * 报修用户提交工单任务申请
@@ -42,4 +44,6 @@ public interface TaskService {
     void leaderRejectPay(String data);
 
     void evaluate(String data);
+
+    BigInteger dispatchTask(BigInteger orderId);
 }

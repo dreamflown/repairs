@@ -13,13 +13,13 @@ public class AuditResultMsg extends ToLeaderMsg<String> {
 
     Order order;
 
-    String auditMsg;
+    String content;
 
     public void send(BigInteger from, BigInteger to, Order order, String content) {
         this.from = from;
         this.to = to;
-        this.auditMsg = auditMsg;
         this.content = content;
+        this.order = order;
 
         // todo websocket 发送消息
     }

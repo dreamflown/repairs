@@ -4,10 +4,8 @@ import com.edu.bupt.repairs.commom.OrderStatus;
 import com.edu.bupt.repairs.model.*;
 import com.edu.bupt.repairs.model.message.AuditResultMsg;
 import com.edu.bupt.repairs.model.message.ToLeaderMsg;
-import com.edu.bupt.repairs.service.OperationService;
-import com.edu.bupt.repairs.service.OrderService;
-import com.edu.bupt.repairs.service.TaskService;
-import com.edu.bupt.repairs.service.UserService;
+import com.edu.bupt.repairs.service.*;
+import com.edu.bupt.repairs.utils.IDKeyUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -37,6 +35,14 @@ public class TaskServiceImpl implements TaskService {
     @Autowired
     OperationService opService;
 
+    @Autowired
+    DeviceOrderService deviceOrderService;
+
+    @Autowired
+    ReviewService reviewService;
+
+    public IDKeyUtil keyConstructor = new IDKeyUtil(5L, 5L);
+
     @Override
     public String submitTask(String data) {
         JsonObject json = new JsonParser().parse(data).getAsJsonObject();
@@ -56,7 +62,7 @@ public class TaskServiceImpl implements TaskService {
         BigInteger leaderId = json.get("leaderId").getAsBigInteger();                   // 审核人id
         BigInteger serviceProviderId = json.get("serviceProviderId").getAsBigInteger(); // 服务商id
 
-        // 自动生成时间信息
+        // 自动生成时间信息 todo 设置数据库可以自动插入新建时间
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         Timestamp createTime = new Timestamp(cal.getTime().getTime()); // 报修时间
@@ -76,7 +82,6 @@ public class TaskServiceImpl implements TaskService {
         order.setLeaderId(leaderId);
         order.setServiceProviderId(serviceProviderId);
         order.setCreateTime(createTime);
-        orderService.addOrder(order);
 
         // 新建维修任务
         JsonArray tasks = json.get("tasks").getAsJsonArray();
@@ -103,6 +108,8 @@ public class TaskServiceImpl implements TaskService {
             task.setAudioUrl(audioUrl);
             taskList.add(task);
         }
+        order.setTaskList(taskList);
+        orderService.addOrder(order);
 
         // 发送消息给负责人
         new ToLeaderMsg<Order>().send(uId, leaderId, order);
@@ -214,19 +221,6 @@ public class TaskServiceImpl implements TaskService {
 
         JsonObject json = new JsonParser().parse(data).getAsJsonObject();
 
-//        Boolean serverTakeOrderResult=true;
-//        Order order=new Order();
-//        order.setServerTakeOrderResult(serverTakeOrderResult);
-//
-//        Task task=new Task();
-//        task.setMaintainerId(uId);
-//
-//        //存入数据库
-//        int result=serverMapper.insert1(task);
-//        if (result<1){
-//            throw new Exception(ErrorCodeEnum.MDC10021019);
-//        }
-
         // 获取工单信息
         BigInteger orderId = json.get("orderId").getAsBigInteger();
         Order order = orderService.getOrderInfo(orderId);
@@ -236,8 +230,8 @@ public class TaskServiceImpl implements TaskService {
 
         // 派发任务:根据服务提供商和报修单位签订的合同，以及履行改合同义务的维修列表，指派维修工
         BigInteger SPId = json.get("SPId").getAsBigInteger();
-        BigInteger leaderId = json.get("leaderId").getAsBigInteger();
-        BigInteger workerId = dispatchTask(SPId, leaderId, orderId);  // TODO 派发任务
+//        BigInteger leaderId = json.get("leaderId").getAsBigInteger();
+        BigInteger workerId = dispatchTask(orderId);  // TODO 派发任务
         if (workerId == null) {
             System.out.println("维修工正忙，请联系服务提供商更换维修工");
         }
@@ -245,8 +239,17 @@ public class TaskServiceImpl implements TaskService {
             task.setWorkerId(workerId);
         }
 
+        // 计划完成时间，接单时间加一周
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        cal.add(Calendar.DAY_OF_WEEK, 1); //增加一周
+        Timestamp ddl = new Timestamp(cal.getTime().getTime()); // 计划完成时间
+        order.setDdl(ddl);
+        order = orderService.saveOrder(order);
+
         // 工单状态变为待执行
         order = orderService.changeOrderStatus(orderId, status.ZhiXing);
+
 
         // 给用户发送消息
         BigInteger uId = order.getUId();  // 报修用户id
@@ -330,7 +333,7 @@ public class TaskServiceImpl implements TaskService {
         // 重新分派维修工
         BigInteger SPId = json.get("SPId").getAsBigInteger();
         BigInteger leaderId = json.get("leaderId").getAsBigInteger();
-        BigInteger workerId = dispatchTask(SPId, leaderId, orderId);  // TODO 派发任务
+        BigInteger workerId = dispatchTask(orderId);  // TODO 派发任务
         if (workerId == null) {
             System.out.println("维修工正忙，请联系服务提供商更换维修工");
         }
@@ -403,7 +406,7 @@ public class TaskServiceImpl implements TaskService {
         // 重新分派维修工
         BigInteger SPId = json.get("SPId").getAsBigInteger();
         BigInteger leaderId = json.get("leaderId").getAsBigInteger();
-        BigInteger workerId = dispatchTask(SPId, leaderId, orderId);  // TODO 派发任务
+        BigInteger workerId = dispatchTask(orderId);  // TODO 派发任务
         if (workerId == null) {
             System.out.println("维修工正忙，请联系服务提供商更换维修工");
         }
@@ -533,7 +536,7 @@ public class TaskServiceImpl implements TaskService {
         }
         totalCost *= discount;
         deviceOrder.setTotalCost(totalCost);
-        deviceOrder.saveDeviceOrder(deviceOrder);
+        deviceOrderService.saveDeviceOrder(deviceOrder);
 
         // 给负责人发送消息
         BigInteger leaderId = json.get("leaderId").getAsBigInteger(); // 负责人id
@@ -694,8 +697,6 @@ public class TaskServiceImpl implements TaskService {
         review = reviewService.saveReview(review);
         order.setReviewId(review.getId());
 
-        BigInteger uId = order.getUId();
-
         // 记录此次操作,工单状态追踪
         Operation op = new Operation();
         op.setOperator(uId);
@@ -703,4 +704,18 @@ public class TaskServiceImpl implements TaskService {
         op.setInfo("维修服务已完成");
         opService.logger(op);
     }
+
+    @Override
+    public BigInteger dispatchTask(BigInteger orderId) {
+
+        Order order = orderService.getOrderInfo(orderId);
+        if (order == null) {
+            System.err.println(new StringBuilder().append("无法分配维修工，工单").append(orderId).append("不存在"));
+            return null;
+        }
+
+        // todo 根据合同设置的维修工名单和故障类型，随机选择一位维修工，后面设计更好的分配策略\
+        return keyConstructor.nextGlobalId();
+    }
+
 }

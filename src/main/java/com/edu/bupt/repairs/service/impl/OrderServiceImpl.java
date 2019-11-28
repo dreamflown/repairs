@@ -1,11 +1,14 @@
 package com.edu.bupt.repairs.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.edu.bupt.repairs.dao.OrderMapper;
 import com.edu.bupt.repairs.model.Order;
 import com.edu.bupt.repairs.service.OrderService;
 import lombok.Synchronized;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.Date;
@@ -16,6 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OrderServiceImpl implements OrderService {
 
     Map<BigInteger, Order> orderMap = new ConcurrentHashMap<>();
+
+    @Autowired
+    OrderMapper orderMapper;
 
     @Override
     public JSONObject addWeiXiuShenQing(BigInteger id, BigInteger user_id, int status, int status_type) {
@@ -78,5 +84,19 @@ public class OrderServiceImpl implements OrderService {
     public Order getOrderInfo(BigInteger orderId) {
 
         return orderMapper.getOrderById(orderId);
+    }
+
+    @Override
+    public Order saveOrder(@NotNull Order order) {
+        BigInteger orderId = order.getId();
+        Order orderCache = orderMap.get(orderId);
+        if (orderCache == null) {
+            order = orderMapper.selectOrder(orderId);
+            if (order == null) {
+                orderMapper.insert(order);
+            }
+            orderCache = order;
+        }
+        return orderCache;
     }
 }

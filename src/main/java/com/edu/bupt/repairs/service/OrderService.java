@@ -74,4 +74,10 @@ public interface OrderService {
      */
     Order getOrderInfo(BigInteger orderId);
 
+    /**
+     * 9. 保存工单信息
+     * @param order
+     * @return
+     */
+    Order saveOrder(Order order);
 }
