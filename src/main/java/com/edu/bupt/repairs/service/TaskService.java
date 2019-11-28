@@ -5,7 +5,7 @@ public interface TaskService {
      * 报修用户提交工单任务申请
      * @param data
      */
-    void submitTask(String data) throws Exception;
+    String submitTask(String data) throws Exception;
 
     void leaderApprovePass(String data);
 

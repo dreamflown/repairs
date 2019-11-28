@@ -1,9 +1,7 @@
 package com.edu.bupt.repairs.controller;
 
 import com.edu.bupt.repairs.commom.OrderStatus;
-import com.edu.bupt.repairs.model.Order;
 import com.edu.bupt.repairs.model.message.ResponseMsg;
-import com.edu.bupt.repairs.model.message.ToLeaderMsg;
 import com.edu.bupt.repairs.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

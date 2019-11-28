@@ -27,6 +27,8 @@ public interface OrderService {
                         BigInteger device_id,int level, DecimalFormat request_latitude, DecimalFormat request_longitude,
                         String description,String enclosure_url);
 
+    int addOrder(Order order);
+
 
 
     /**
@@ -57,5 +59,19 @@ public interface OrderService {
      */
     JSONObject selectFacilitator(BigInteger user_id,BigInteger facilitator_id);
 
-    Order changeOrderStatus(BigInteger orederId, String currentStatusMsg, String NextStatus);
+    /**
+     * 7.修改工单状态
+     * @param orderId
+     * @param NextStatus
+     * @return
+     */
+    Order changeOrderStatus(BigInteger orderId, String NextStatus);
+
+    /**
+     * 8.获取工单信息
+     * @param orderId
+     * @return
+     */
+    Order getOrderInfo(BigInteger orderId);
+
 }

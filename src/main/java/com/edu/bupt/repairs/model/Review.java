@@ -1,19 +1,22 @@
 package com.edu.bupt.repairs.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigInteger;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Review {
+
+    private BigInteger id;
 
     private BigInteger userId;
 
     private int score;
 
     private String contents;
-
-    public void setUserId(BigInteger userId){this.userId=userId;}
-
-    public void setScore(int score){this.score=score;}
-
-    public void setContents(String contents){this.contents=contents;}
 
 }

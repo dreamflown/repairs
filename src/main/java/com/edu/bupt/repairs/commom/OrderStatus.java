@@ -10,6 +10,8 @@ public class OrderStatus {
 
     public static final String ShenHeZhong = "审核中";
 
+    public static final String JieDan = "待接单";
+
     public static final String ZhiXing = "待执行";
 
     public static final String WeiXiu = "维修中";
@@ -23,4 +25,6 @@ public class OrderStatus {
     public static final String YanShou = "待验收";
 
     public static final String PingJia = "待评价";
+
+    public static final String WanCheng = "已完成";
 }

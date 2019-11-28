@@ -1,63 +1,44 @@
 package com.edu.bupt.repairs.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Order {
-    private String id;
-    private  String address;
-    private Integer type;
-    private  Boolean serverTakeOrderResult;
-    private Boolean workerTakeOrderResult;
-    private Boolean serverApprovalPayResult;
+    // 工单id
+    private BigInteger id;
+    // 工单状态
+    private String status;
+    // 合同id
+    private BigInteger contractId;
+    // 报修用户id
+    private BigInteger uId;
+    // 审核人id
+    private BigInteger leaderId;
+    // 服务提供商id
+    private BigInteger ServiceProviderId;
+    // 任务子项列表
+    private List<Task> taskList;
+    // 备件更换单号
+    private BigInteger deviceApply;
+    // 总维修费用
+    private Float totalCost;
+    // 工单创建时间
+    private Timestamp createTime;
+    // 计划完成时间
+    private Timestamp ddl;
+    // 维修结果
+    private Boolean result;
+    // 维修记录
+    private String record;
+    // 评价
+    private BigInteger reviewId;
 
-
-
-    public Order(String userid, String address, Integer type) {
-        this.id = userid;
-        this.address = address;
-        this.type = type;
-    }
-    public void setServerApprovalPayResult(Boolean serverApprovalPayResult){
-        this.serverApprovalPayResult=serverApprovalPayResult;
-    }
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address == null ? null : address.trim();
-    }
-
-    public Integer getType() { return type; }
-
-    public void setType(Integer type) {
-        this.type= type;
-    }
-
-    public Boolean getServerTakeOrderResult() {
-        return serverTakeOrderResult;
-    }
-
-    public void setServerTakeOrderResult(Boolean serverTakeOrderResult) {
-        this.serverTakeOrderResult =serverTakeOrderResult;}
-
-    public Boolean getWorkerTakeOrderResult() {
-        return workerTakeOrderResult;
-    }
-
-    public void setWorkerTakeOrderResult(Boolean workerTakeOrderResult) {
-        this.workerTakeOrderResult =workerTakeOrderResult;}
-
-    public Order() {
-        super();
-    }
 }
