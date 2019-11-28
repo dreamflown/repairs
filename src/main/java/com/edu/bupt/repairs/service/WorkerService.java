@@ -10,7 +10,7 @@ public interface WorkerService {
      * 1.接单
      * @return Order
      */
-    JSONObject takeOrder(BigInteger maintainer_id);
+    JSONObject takeOrder(BigInteger task_id);
 
 
     /**
